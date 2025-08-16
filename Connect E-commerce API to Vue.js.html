@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js E-commerce Store</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue.js library -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Google Fonts: Playfair Display for headings, Inter for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <style>
+        /* Use custom fonts */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark background */
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom scrollbar for a dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* --- Animations --- */
+        
+        /* Staggered fade-in for product cards */
+        .product-card {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cart item transitions */
+        .cart-item-enter-active, .cart-item-leave-active {
+            transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1);
+        }
+        .cart-item-enter-from, .cart-item-leave-to {
+            opacity: 0;
+            transform: scale(0.9) translateX(30px);
+        }
+        
+        /* Cart total update animation */
+        .total-anim-enter-active {
+            transition: all 0.3s ease-out;
+        }
+        .total-anim-leave-active {
+             transition: all 0.3s ease-in;
+        }
+        .total-anim-enter-from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        .total-anim-leave-to {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Header Section -->
+        <header class="mb-12 text-center">
+            <h1 class="text-5xl md:text-7xl font-bold text-white">Modern Threads</h1>
+            <p class="text-lg text-gray-400 mt-4 max-w-2xl mx-auto">Where timeless design meets contemporary style. Explore collections that define you.</p>
+        </header>
+
+        <!-- Hero Banner Section -->
+        <div class="relative bg-gray-800 rounded-2xl shadow-lg mb-12 p-8 md:p-16 overflow-hidden">
+            <div class="absolute inset-0 bg-cover bg-center opacity-20" style="background-image: url('https://images.unsplash.com/photo-1551232864-3f0890e580d9?q=80&w=1974&auto=format&fit=crop');"></div>
+            <div class="relative z-10 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">New Autumn Collection</h2>
+                <p class="text-gray-300 text-xl mb-8">Embrace the season with our latest arrivals.</p>
+                <a href="#" class="bg-white text-gray-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-200 transition-colors">Explore Now</a>
+            </div>
+        </div>
+
+
+        <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
+
+            <!-- Main Content: Products and Filters -->
+            <main class="w-full lg:w-3/4">
+                <!-- Filters Section -->
+                <div class="bg-gray-800 p-4 rounded-xl shadow-md mb-8 flex flex-col sm:flex-row gap-4 items-center border border-gray-700">
+                    <h2 class="text-xl font-semibold mr-4 text-gray-300">Categories</h2>
+                    <div class="flex-grow w-full sm:w-auto">
+                        <label for="category-filter" class="sr-only">Filter by category</label>
+                        <select id="category-filter" v-model="selectedCategory" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white transition-all">
+                            <option value="">All Collections</option>
+                            <option v-for="category in uniqueCategories" :key="category" :value="category">{{ category }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                    <div v-for="(product, index) in filteredProducts" :key="product.id" class="product-card bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-cyan-500/20 hover:border-cyan-500 hover:-translate-y-2" :style="{ animationDelay: `${index * 100}ms` }">
+                        <div class="relative">
+                            <img :src="product.image" :alt="product.name" class="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-110" onerror="this.src='https://placehold.co/600x400/1f2937/9ca3af?text=Image+Not+Found'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                               <h3 class="text-2xl font-bold text-white">{{ product.name }}</h3>
+                            </div>
+                        </div>
+                        <div class="p-6 flex-grow flex flex-col">
+                            <p class="text-gray-400 mb-4 flex-grow">{{ product.description }}</p>
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-3xl font-bold text-white">${{ product.price.toFixed(2) }}</span>
+                                <button @click="addToCart(product)" :class="product.addedToCart ? 'bg-green-500' : 'bg-white'" class="text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-cyan-300 transition-all duration-300 flex items-center gap-2 transform hover:scale-105">
+                                    <ion-icon :name="product.addedToCart ? 'checkmark-outline' : 'cart-outline'" class="text-xl"></ion-icon>
+                                    {{ product.addedToCart ? 'Added!' : 'Add' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Empty State for Products -->
+                <div v-if="filteredProducts.length === 0" class="text-center py-24 bg-gray-800 rounded-xl shadow-md border border-gray-700">
+                    <ion-icon name="eyeglass-outline" class="text-6xl text-gray-600"></ion-icon>
+                    <h3 class="text-3xl font-bold text-gray-300 mt-4">No Products Found</h3>
+                    <p class="text-gray-500 mt-2">Try a different category or check back later!</p>
+                </div>
+            </main>
+
+            <!-- Sidebar: Shopping Cart -->
+            <aside class="w-full lg:w-1/4">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg sticky top-8 border border-gray-700">
+                    <div class="flex items-center gap-4 border-b border-gray-700 pb-4 mb-4">
+                        <ion-icon name="cart-outline" class="text-3xl text-white"></ion-icon>
+                        <h2 class="text-3xl font-bold text-white">My Cart</h2>
+                    </div>
+                    <transition-group name="cart-item" tag="div">
+                        <div v-for="item in cart" :key="item.id" class="flex justify-between items-center mb-5">
+                            <div class="flex items-center gap-4">
+                                <img :src="item.image" class="w-16 h-16 rounded-lg object-cover border-2 border-gray-700" onerror="this.src='https://placehold.co/100x100/1f2937/9ca3af?text=N/A'">
+                                <div>
+                                    <h4 class="font-semibold text-white">{{ item.name }}</h4>
+                                    <p class="text-gray-400">${{ item.price.toFixed(2) }}</p>
+                                </div>
+                            </div>
+                            <button @click="removeFromCart(item.id)" class="text-gray-500 hover:text-red-500 transition-colors">
+                                <ion-icon name="trash-outline" class="text-2xl"></ion-icon>
+                            </button>
+                        </div>
+                    </transition-group>
+
+                    <div v-if="cart.length > 0" class="border-t border-gray-700 pt-4 mt-4">
+                        <div class="flex justify-between items-center font-bold text-2xl text-white mb-6">
+                            <span>Total:</span>
+                            <transition name="total-anim" mode="out-in">
+                               <span :key="cartTotal">${{ cartTotal.toFixed(2) }}</span>
+                            </transition>
+                        </div>
+                        <button class="w-full bg-cyan-500 text-gray-900 py-3 rounded-lg font-bold hover:bg-cyan-400 transition-colors text-lg">
+                            Proceed to Checkout
+                        </button>
+                    </div>
+
+                    <div v-else class="text-center text-gray-600 py-16">
+                        <ion-icon name="sad-outline" class="text-5xl"></ion-icon>
+                        <p class="mt-4">Your cart is feeling lonely.</p>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    // UPDATED: Product data with specific, relevant images from unsplash.com
+                    products: [
+                        { id: 1, name: 'Linen Work Shirt', category: 'Apparel', price: 68.00, description: 'A breathable, all-season shirt crafted from premium linen.', image: 'https://images.unsplash.com/photo-1622470953794-34503b2db969?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                        { id: 9, name: 'Minimalist Wallet', category: 'Accessories', price: 45.00, description: 'A slim wallet made from high-quality vegan leather.', image: 'invalid-image-url.jpg', addedToCart: false },
+                        { id: 2, name: 'Selvedge Denim', category: 'Apparel', price: 145.00, description: 'Classic straight-leg jeans made from authentic selvedge denim.', image: 'https://images.unsplash.com/photo-1604176251229-a13b24194157?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                        { id: 3, name: 'Chronograph Watch', category: 'Accessories', price: 250.00, description: 'A sophisticated timepiece with a stainless steel case.', image: 'https://images.unsplash.com/photo-1594576722539-a7147b89b8a3?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                        { id: 4, name: 'Suede Sneakers', category: 'Footwear', price: 180.00, description: 'Minimalist sneakers crafted from rich, high-quality suede.', image: 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                        { id: 5, name: 'Cashmere Beanie', category: 'Accessories', price: 75.00, description: 'Luxuriously soft beanie made from 100% pure cashmere.', image: '', addedToCart: false },
+                        { id: 6, name: 'Trench Coat', category: 'Apparel', price: 350.00, description: 'A timeless, water-resistant trench coat for any weather.', image: 'https://images.unsplash.com/photo-1542485223-e6a3d5a23258?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                        { id: 7, name: 'Leather Tote Bag', category: 'Accessories', price: 220.00, description: 'A versatile and durable tote bag made from full-grain leather.', image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                        { id: 8, name: 'Chelsea Boots', category: 'Footwear', price: 275.00, description: 'Sleek and comfortable Chelsea boots in hand-burnished leather.', image: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?q=80&w=800&auto=format&fit=crop', addedToCart: false },
+                    ],
+                    cart: [],
+                    selectedCategory: '',
+                };
+            },
+            computed: {
+                uniqueCategories() {
+                    const categories = this.products.map(p => p.category);
+                    return [...new Set(categories)];
+                },
+                sortedProducts() {
+                    return [...this.products].sort((a, b) => {
+                        const aHasImage = a.image && a.image.startsWith('https');
+                        const bHasImage = b.image && b.image.startsWith('https');
+                        if (aHasImage && !bHasImage) return -1;
+                        if (!aHasImage && bHasImage) return 1;
+                        return 0;
+                    });
+                },
+                filteredProducts() {
+                    if (!this.selectedCategory) {
+                        return this.sortedProducts;
+                    }
+                    return this.sortedProducts.filter(product => product.category === this.selectedCategory);
+                },
+                cartTotal() {
+                    return this.cart.reduce((total, item) => total + item.price, 0);
+                }
+            },
+            methods: {
+                addToCart(product) {
+                    if (this.cart.find(item => item.id === product.id)) return;
+                    
+                    this.cart.push(product);
+                    product.addedToCart = true;
+
+                    // Revert the button state after a short delay
+                    setTimeout(() => {
+                        product.addedToCart = false;
+                    }, 1500);
+                },
+                removeFromCart(productId) {
+                    this.cart = this.cart.filter(item => item.id !== productId);
+                }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
